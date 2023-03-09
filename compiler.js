@@ -119,6 +119,14 @@ export const lookup = new Map([
     ],
 
     [
+        "index",
+        (node = new TreeNode()) => {
+            if (node.args.length < 2) error("Error: \"index\" requires a name and index.");
+            return `${compileValue(node.args[0])}\\left[${compileValue(node.args[1])}\\right]`;
+        }
+    ],
+
+    [
         "params",
         (node = new TreeNode()) => {
             return node.args.map(compileValue).join(",");
