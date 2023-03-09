@@ -99,7 +99,7 @@ export const lookup = new Map([
         "point",
         (node = new TreeNode()) => {
             if (node.args.length < 2) error("Error: \"point\" requires 2 inputs");
-            return `\\left(${valueFormat(node.args[0])},${valueFormat(node.args[1])}\\right)`;
+            return `\\left(${compileValue(node.args[0])},${compileValue(node.args[1])}\\right)`;
         }
     ],
 
