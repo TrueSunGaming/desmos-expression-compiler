@@ -33,10 +33,7 @@ export const lookup = new Map([
         "let",
         (node = new TreeNode()) => {
             if (node.args.length < 1) error("Error: Expected identifier as variable name for \"let\"");
-            const n = identifierFormat(node.args[0]);
-            const v = typeof node.args[1] == "string" ? (node.args.length < 2 ? 0 : valueFormat(node.args[1])) : node.args[1].compiled;
-            if (n == null || v == null) return null;
-            return `${n}=${v}`;
+            return `${compileValue(node.args[0])}=${compileValue(node.args[1] ?? 0)}`;
         }
     ],
 
@@ -44,39 +41,28 @@ export const lookup = new Map([
         "set",
         (node = new TreeNode()) => {
             if (node.args.length < 1) error("Error: Expected identifier as variable name for \"set\"");
-            const n = identifierFormat(node.args[0]);
-            const v = typeof node.args[1] == "string" ? (node.args.length < 2 ? 0 : valueFormat(node.args[1])) : node.args[1].compiled;
-            if (n == null || v == null) return null;
-            return `${n}\\to ${v}`;
+            return `${compileValue(node.args[0])}\\to ${compileValue(node.args[1] ?? 0)}`;
         }
     ],
 
     [
         "add",
-        (node = new TreeNode()) => {
-            return `\\left(${node.args.map(compileValue).join("+")}\\right)`;
-        }
+        (node = new TreeNode()) => `\\left(${node.args.map(compileValue).join("+")}\\right)`
     ],
 
     [
         "sub",
-        (node = new TreeNode()) => {
-            return `\\left(${node.args.map(compileValue).join("-")}\\right)`;
-        }
+        (node = new TreeNode()) => `\\left(${node.args.map(compileValue).join("-")}\\right)`
     ],
 
     [
         "mul",
-        (node = new TreeNode()) => {
-            return `\\left(${node.args.map(compileValue).join("\\cdot ")}\\right)`;
-        }
+        (node = new TreeNode()) => `\\left(${node.args.map(compileValue).join("\\cdot ")}\\right)`
     ],
 
     [
         "pow",
-        (node = new TreeNode()) => {
-            return `\\left(\\left(${compileValue(node.args[0])}\\right)^{\\left(${compileValue(node.args[1])}\\right)}\\right)`;
-        }
+        (node = new TreeNode()) => `\\left(\\left(${compileValue(node.args[0])}\\right)^{\\left(${compileValue(node.args[1])}\\right)}\\right)`
     ],
 
     [
@@ -113,9 +99,7 @@ export const lookup = new Map([
 
     [
         "list",
-        (node = new TreeNode()) => {
-            return `\\left[${node.args.map(compileValue).join(",")}\\right]`;
-        }
+        (node = new TreeNode()) => `\\left[${node.args.map(compileValue).join(",")}\\right]`
     ],
 
     [
@@ -128,9 +112,7 @@ export const lookup = new Map([
 
     [
         "params",
-        (node = new TreeNode()) => {
-            return node.args.map(compileValue).join(",");
-        }
+        (node = new TreeNode()) => node.args.map(compileValue).join(",")
     ],
 
     [
@@ -402,7 +384,160 @@ export const lookup = new Map([
             if (node.args.length < 3) error("Error: Expected list, variable name, and function for \"listcomp\"");
             return `\\left[${compileValue(node.args[2])}\\operatorname{for}${compileValue(node.args[1])}=${compileValue(node.args[0])}\\right]`;
         }
-    ]
+    ],
+
+    [
+        "len",
+        (node = new TreeNode()) => {
+            if (node.args.length < 1) error("Error: Expected at least one value for \"len\"");
+            return `\\operatorname{length}\\left(${node.args.map(compileValue).join(",")}\\right)`;
+        }
+    ],
+
+    [
+        "mean",
+        (node = new TreeNode()) => {
+            if (node.args.length < 1) error("Error: Expected at least one value for \"mean\"");
+            return `\\operatorname{mean}\\left(${node.args.map(compileValue).join(",")}\\right)`;
+        }
+    ],
+
+    [
+        "median",
+        (node = new TreeNode()) => {
+            if (node.args.length < 1) error("Error: Expected at least one value for \"median\"");
+            return `\\operatorname{median}\\left(${node.args.map(compileValue).join(",")}\\right)`;
+        }
+    ],
+
+    [
+        "min",
+        (node = new TreeNode()) => {
+            if (node.args.length < 1) error("Error: Expected at least one value for \"min\"");
+            return `\\min\\left(${node.args.map(compileValue).join(",")}\\right)`;
+        }
+    ],
+
+    [
+        "max",
+        (node = new TreeNode()) => {
+            if (node.args.length < 1) error("Error: Expected at least one value for \"max\"");
+            return `\\max\\left(${node.args.map(compileValue).join(",")}\\right)`;
+        }
+    ],
+
+    [
+        "mad",
+        (node = new TreeNode()) => {
+            if (node.args.length < 1) error("Error: Expected at least one value for \"mad\"");
+            return `\\operatorname{mad}\\left(${node.args.map(compileValue).join(",")}\\right)`;
+        }
+    ],
+
+    [
+        "ellipsis",
+        () => "..."
+    ],
+
+    [
+        "empty",
+        () => ""
+    ],
+
+    [
+        "latex",
+        (node = new TreeNode()) => node.args.join(" ")
+    ],
+
+    [
+        "fact",
+        (node = new TreeNode()) => {
+            if (node.args.length < 1) error("Error: Expected a value for \"fact\"");
+            return `\\left(${compileValue(node.args[0])}\\right)!`;
+        }
+    ],
+
+    [
+        "ln",
+        (node = new TreeNode()) => {
+            if (node.args.length < 1) error("Error: Expected a value for \"ln\"");
+            return `\\ln\\left(${compileValue(node.args[0])}\\right)`;
+        }
+    ],
+
+    [
+        "log",
+        (node = new TreeNode()) => {
+            if (node.args.length < 2) error("Error: Expected a value and base for \"log\"");
+            return `\\log_{${compileValue(node.args[1])}}\\left(${compileValue(node.args[0])}\\right)`;
+        }
+    ],
+
+    [
+        "deriv",
+        (node = new TreeNode()) => {
+            if (node.args.length < 2) error("Error: Expected an expression and variable name for \"deriv\"");
+            return `\\frac{d}{d${compileValue(node.args[1])}}\\left(${compileValue(node.args[0])}\\right)`;
+        }
+    ],
+
+    [
+        "inf",
+        () => "\\infty"
+    ],
+
+    [
+        "ninf",
+        () => "-\\infty"
+    ],
+
+    [
+        "int",
+        (node = new TreeNode()) => {
+            if (node.args.length < 4) error("Error: Expected an expression, minimum, maximum, and variable name for \"int\"");
+            return `\\int_{${compileValue(node.args[1])}}^{${compileValue(node.args[2])}}\\left(${compileValue(node.args[0])}\\right)d${compileValue(node.args[3])}`;
+        }
+    ],
+
+    [
+        "neg",
+        (node = new TreeNode()) => {
+            if (node.args.length < 1) error("Error: Expected a value for \"neg\"");
+            return `-\\left(${compileValue(node.args[0])}\\right)`;
+        }
+    ],
+
+    [
+        "sum",
+        (node = new TreeNode()) => {
+            if (node.args.length < 4) error("Error: Expected an expression, minimum, maximum, and variable name for \"sum\"");
+            return `\\sum_{${compileValue(node.args[3])}=${compileValue(node.args[1])}}^{${compileValue(node.args[2])}}\\left(${compileValue(node.args[0])}\\right)`;
+        }
+    ],
+
+    [
+        "prod",
+        (node = new TreeNode()) => {
+            if (node.args.length < 4) error("Error: Expected an expression, minimum, maximum, and variable name for \"prod\"");
+            return `\\prod_{${compileValue(node.args[3])}=${compileValue(node.args[1])}}^{${compileValue(node.args[2])}}\\left(${compileValue(node.args[0])}\\right)`;
+        }
+    ],
+
+    [
+        "dist",
+        (node = new TreeNode()) => {
+            if (node.args.length < 2) error("Error: Expected 2 values for \"dist\"");
+            return `\\operatorname{distance}\\left(${compileValue(node.args[0])},${compileValue(node.args[1])}\\right)`;
+        }
+    ],
+
+    [
+        "mid",
+        (node = new TreeNode()) => {
+            if (node.args.length < 2) error("Error: Expected 2 values for \"mid\"");
+            return `\\operatorname{midpoint}\\left(${compileValue(node.args[0])},${compileValue(node.args[1])}\\right)`;
+        }
+    ],
 ]);
 
 class TreeNode {
